@@ -28,8 +28,11 @@ class DepositController extends Controller
             ->latest('id')
             ->value('customer_phone');
 
+        $requested = Currency::tryFrom(strtoupper((string) $request->query('currency', '')));
+
         return view('deposits.create', [
             'currencies' => $currencies,
+            'selected' => in_array($requested, $currencies, true) ? $requested->value : ($currencies[0]->value ?? null),
             'methods' => $this->methodsByCurrency($currencies),
             'limits' => collect($currencies)->mapWithKeys(fn (Currency $c) => [$c->value => $astropay->limits($c, TransactionType::Deposit)]),
             'lastPhone' => $lastPhone,

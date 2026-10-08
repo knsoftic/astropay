@@ -22,8 +22,11 @@ class WithdrawalController extends Controller
         $currencies = $astropay->enabledCurrencies();
         $userId = $request->user()->getKey();
 
+        $requested = Currency::tryFrom(strtoupper((string) $request->query('currency', '')));
+
         return view('withdrawals.create', [
             'currencies' => $currencies,
+            'selected' => in_array($requested, $currencies, true) ? $requested->value : ($currencies[0]->value ?? null),
             'methods' => collect($currencies)->mapWithKeys(fn (Currency $c) => [
                 $c->value => array_map(fn ($m) => ['value' => $m->value, 'label' => $m->label()], $c->paymentMethods()),
             ])->all(),

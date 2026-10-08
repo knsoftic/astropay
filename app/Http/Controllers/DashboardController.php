@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AstroPay\Currency;
+use App\Enums\AstroPay\TransactionStatus;
 use App\Models\AstroPayTransaction;
 use App\Services\AstroPay\AstroPayManager;
 use Illuminate\Http\Request;
@@ -30,9 +31,21 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        $inProgress = AstroPayTransaction::query()
+            ->where('user_id', $user->getKey())
+            ->whereIn('status', [
+                TransactionStatus::AwaitingApproval->value,
+                TransactionStatus::Initiated->value,
+                TransactionStatus::Pending->value,
+                TransactionStatus::Unknown->value,
+            ])
+            ->count();
+
         return view('dashboard', [
             'balances' => $balances,
+            'enabled' => collect($astropay->enabledCurrencies())->map(fn (Currency $c) => $c->value)->all(),
             'transactions' => $transactions,
+            'inProgress' => $inProgress,
             'hasEnabledCurrency' => $astropay->enabledCurrencies() !== [],
         ]);
     }
